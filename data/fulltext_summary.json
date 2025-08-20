@@ -1,0 +1,8 @@
+{
+  "input_unique_doi": 4500,
+  "appended": 295,
+  "skipped_existing": 0,
+  "failures": 4205,
+  "out_json": "fulltext_articles.json",
+  "skipped_csv": "fulltext_skipped.csv"
+}
