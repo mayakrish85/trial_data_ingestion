@@ -1,0 +1,65 @@
+from __future__ import annotations
+from typing import Dict, Any, Optional, List
+from bs4 import BeautifulSoup
+
+DROP_TAGS = {
+    "fig", "fig-group", "table", "table-wrap", "graphic", "media",
+    "alternatives", "inline-formula", "disp-formula", "tex-math",
+    "ref-list", "license", "permissions", "copyright-statement",
+    "supplementary-material", "fn", "fn-group"
+}
+
+def section_to_nested_dict(sec_tag) -> Dict[str, Any]:
+    title_tag = sec_tag.find("title")
+    section_title = title_tag.get_text(strip=True).title() if title_tag else "Untitled Section"
+    for t in sec_tag.find_all(list(DROP_TAGS)):
+        t.decompose()
+    paragraphs = [p.get_text(" ", strip=True) for p in sec_tag.find_all("p", recursive=False)]
+    text = " ".join(paragraphs).strip()
+    section_dict: Dict[str, Any] = {}
+    if text:
+        section_dict["text"] = text
+    for child in sec_tag.find_all("sec", recursive=False):
+        child_dict = section_to_nested_dict(child)
+        for k, v in child_dict.items():
+            section_dict[k] = v
+    return {section_title: section_dict}
+
+def collapse_body_to_section(body) -> Dict[str, Any]:
+    full_text = body.get_text(" ", strip=True) if body else ""
+    return {"Full Text": {"text": full_text}} if full_text else {}
+
+def linearize_body_to_fulltext(body) -> Dict[str, Any]:
+    body_copy = BeautifulSoup(str(body), "lxml-xml")
+    for t in body_copy.find_all(list(DROP_TAGS)):
+        t.decompose()
+    chunks: List[str] = []
+    for p in body_copy.find_all("p"):
+        txt = p.get_text(" ", strip=True)
+        if txt:
+            chunks.append(txt)
+    for lst in body_copy.find_all("list"):
+        items = [li.get_text(" ", strip=True) for li in lst.find_all("list-item", recursive=False)]
+        items = [it for it in items if it]
+        if items:
+            chunks.append("\n".join(f"• {it}" for it in items))
+    for dq in body_copy.find_all(["disp-quote", "boxed-text"]):
+        txt = dq.get_text(" ", strip=True)
+        if txt:
+            chunks.append(txt)
+    full_text = "\n\n".join([c for c in chunks if c])
+    return {"Full Text": {"text": full_text}} if full_text else {}
+
+def sections_to_text(sections: Dict[str, Any]) -> str:
+    out: List[str] = []
+    def dfs(node: Dict[str, Any]):
+        txt = node.get("text")
+        if isinstance(txt, str) and txt.strip():
+            out.append(txt.strip())
+        for k, v in node.items():
+            if isinstance(v, dict) and k != "text":
+                dfs(v)
+    for _, block in sections.items():
+        if isinstance(block, dict):
+            dfs(block)
+    return "\n\n".join(out).strip()
