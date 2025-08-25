@@ -1,8 +1,14 @@
 {
-  "input_unique_doi": 4500,
-  "appended": 295,
-  "skipped_existing": 0,
-  "failures": 4205,
-  "out_json": "fulltext_articles.json",
-  "skipped_csv": "fulltext_skipped.csv"
+  "input_unique_doi": 4545,
+  "appended": 0,
+  "skipped_existing": 192,
+  "failures": 4353,
+  "out_json": "data/processed\\fulltext_articles.json",
+  "skipped_csv": "data/processed\\fulltext_skipped.csv",
+  "batched_helpers": true,
+  "min_fulltext_chars": 200,
+  "skip_pmc_single_fallback": true,
+  "idconv_chunk": 200,
+  "efetch_chunk": 100,
+  "batch_workers": 4
 }
